@@ -92,7 +92,7 @@ class HT16K33(object):
 
     def get_led(self, led):
         """Gets specified LED (value of 0 to 127), 0/False
-        for off and 1 (or any True/non-zero value) for on.
+        for off and 1 for on.
         """
         if led < 0 or led > 127:
             raise ValueError('LED must be value of 0 to 127.')
@@ -108,7 +108,7 @@ class HT16K33(object):
             self._device.write8(i, value)
 
     def read_display(self):
-        """Write display buffer to display hardware."""
+        """Read display hardware to display buffer."""
         for pos in range(16):
             self.buffer[pos] = self._device.readU8(pos)
 
