@@ -90,10 +90,27 @@ class HT16K33(object):
             # Turn on the speciried LED (set bit to one).
             self.buffer[pos] |= (1 << offset)
 
+    def get_led(self, led):
+        """Gets specified LED (value of 0 to 127), 0/False
+        for off and 1 (or any True/non-zero value) for on.
+        """
+        if led < 0 or led > 127:
+            raise ValueError('LED must be value of 0 to 127.')
+        # Calculate position in byte buffer and bit offset of desired LED.
+        pos = led // 8
+        offset = led % 8
+        pixel = self.buffer[pos] & (1 << offset)
+        return 0 if pixel == 0 else 1
+
     def write_display(self):
         """Write display buffer to display hardware."""
         for i, value in enumerate(self.buffer):
             self._device.write8(i, value)
+
+    def read_display(self):
+        """Write display buffer to display hardware."""
+        for pos in range(16):
+            self.buffer[pos] = self._device.readU8(pos)
 
     def clear(self):
         """Clear contents of display buffer."""
