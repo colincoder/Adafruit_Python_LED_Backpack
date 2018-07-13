@@ -1,6 +1,5 @@
-# Copyright (c) 2017 Adafruit Industries
-# Author: Carter Nelson
-# Modified from Matrix8x8 by Tony DiCola
+# Copyright (c) 2018 Colin Stearman
+# Author: Colin Stearman
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,19 +18,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-from . import HT16K33
+
 from PIL import Image
 from PIL import ImageDraw
 import time
+from .Matrix8x16 import Matrix8x16
 
-class Matrix8x16(HT16K33.HT16K33):
+class FeatherMatrix8x16(Matrix8x16):
     """Single color 8x16 matrix LED backpack display."""
 
     def __init__(self, **kwargs):
         """Initialize display.  All arguments will be passed to the HT16K33 class
         initializer, including optional I2C address and bus number parameters.
         """
-        super(Matrix8x16, self).__init__(**kwargs)
+        super(FeatherMatrix8x16, self).__init__(**kwargs)
 
 # 8x8 monochrome bitmap fonts for rendering
 # Author: Daniel Hepper <daniel@hepper.net>
@@ -72,7 +72,7 @@ class Matrix8x16(HT16K33.HT16K33):
         '1':    [ 0x0C, 0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x3F, 0x00],   
         '2':    [ 0x1E, 0x33, 0x30, 0x1C, 0x06, 0x33, 0x3F, 0x00],   
         '3':    [ 0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00], 
-# MAde four narrower
+# Made four narrower
 #        '4':    [ 0x38, 0x3C, 0x36, 0x33, 0x7F, 0x30, 0x78, 0x00],   
         '4':    [ 0x18, 0x1C, 0x1E, 0x1B, 0x3F, 0x18, 0x3C, 0x00],   
         '5':    [ 0x3F, 0x03, 0x1F, 0x30, 0x30, 0x33, 0x1E, 0x00],   
@@ -152,7 +152,7 @@ class Matrix8x16(HT16K33.HT16K33):
         }
 
 
-
+# Returns an image of the requested character
     def getcharimage(self,v):
         image = Image.new('1', (8, 8))   
         if ord(v) < 32 or ord(v) > 126:
@@ -166,7 +166,11 @@ class Matrix8x16(HT16K33.HT16K33):
                 draw.point((7-x,y), pt)
         return image
 
+# Pastes a given 2 digit number into the supplied 8x16 image
     def setnumber(self,n,image):
+        imwidth, imheight = image.size
+        if imwidth != 8 or imheight != 16:
+            raise ValueError('Image must be an 8x16 pixels in size.')
         if n < 0 or n > 99:
             leftimage = self.getcharimage('-')
             rightimage = self.getcharimage('-')
@@ -181,8 +185,9 @@ class Matrix8x16(HT16K33.HT16K33):
         image.paste(leftimage, (0, 0, 8, 8))
         image.paste(rightimage, (0, 7, 8, 15))
 
-
-
+# Replacement for the function on Matrix8x16
+# For the Adafruit 0.8" 8x16 LED Matrix FeatherWing the 2 displays have coordinates rotated by 90Deg
+# This corrects that.
     def set_pixel(self, x, y, value):
         """Set pixel at position x, y to the given value.  X and Y should be values
         of 0 to 7 and 0 to 15, resp.  Value should be 0 for off and non-zero for on.
@@ -190,49 +195,27 @@ class Matrix8x16(HT16K33.HT16K33):
         if x < 0 or x > 7 or y < 0 or y > 15:
             # Ignore out of bounds pixels.
             return
-#CJS For the Adafruit 0.8" 8x16 LED Matrix FeatherWing the 2 displays have coordinates rotated by 90Deg
-#    This corrects that.
         if y < 8:
             self.set_led( y * 16 + x, value)
         else:
             self.set_led((y-8) * 16 + (x+8), value)
 
+# New function to return the setting of the given pixel from the hardware
     def get_pixel(self, x, y):
         """Get pixel at position x, y.  X and Y should be values
-        of 0 to 7 and 0 to 15, resp.  Value are 0 for off and non-zero for on.
+        of 0 to 7 and 0 to 15, resp.  Value are 0 for off and 1 for on.
         """
         if x < 0 or x > 7 or y < 0 or y > 15:
             # Ignore out of bounds pixels.
             return
-#CJS For the Adafruit 0.8" 8x16 LED Matrix FeatherWing the 2 displays have coordinates rotated by 90Deg
-#    This corrects that.
         if y < 8:
             return self.get_led( y * 16 + x)
         else:
             return self.get_led((y-8) * 16 + (x+8))
 
-    def set_image(self, image):
-        """Set display buffer to Python Image Library image.  Image will be converted
-        to 1 bit color and non-zero color values will light the LEDs.
-        """
-        imwidth, imheight = image.size
-        if imwidth != 8 or imheight != 16:
-            raise ValueError('Image must be an 8x16 pixels in size.')
-        # Convert image to 1 bit color and grab all the pixels.
-        pix = image.convert('1').load()
-        # Loop through each pixel and write the display buffer pixel.
-        for x in xrange(8):
-            for y in xrange(16):
-                color = pix[(x, y)]
-                # Handle the color of the pixel, off or on.
-                if color == 0:
-                    self.set_pixel(x, y, 0)
-                else:
-                    self.set_pixel(x, y, 1)
-
+ # New function to return an image containing the current display settings
     def get_image(self):
-        """Set display buffer from hardware.
-        """
+        """Set display buffer from hardware.  """
         image = Image.new('1', (8, 16))
         draw = ImageDraw.Draw(image)
         for x in xrange(8):
@@ -240,10 +223,7 @@ class Matrix8x16(HT16K33.HT16K33):
                 draw.point((x,y),self.get_pixel(x, y))
         return image
 
-    def create_blank_image(self):
-        return Image.new("RGB", (8, 16))
-
-
+# Replaces the original function to corrent for 90 Deg rotation issue
     def vertical_scroll(self, image, padding=True):
         """Returns a list of images which appear to scroll from left to right
         across the input image when displayed on the LED matrix in order.
@@ -291,6 +271,7 @@ class Matrix8x16(HT16K33.HT16K33):
         #Return the list of images created
         return image_list
 
+# Replaces the original function to corrent for 90 Deg rotation issue
     def horizontal_scroll(self, image, padding=True):
         """Returns a list of images which appear to scroll from top to bottom
         down the input image when displayed on the LED matrix in order.
@@ -340,29 +321,12 @@ class Matrix8x16(HT16K33.HT16K33):
         #Return the list of images created
         return image_list
 
-    def animate(self, images, delay=.25):
-        """Displays each of the input images in order, pausing for "delay"
-        seconds after each image.
-
-        Keyword arguments:
-        image -- An iterable collection of Image objects.
-        delay -- How many seconds to wait after displaying an image before
-            displaying the next one. (Default = .25)
-        """
-        for image in images:
-            # Draw the image on the display buffer.
-            self.set_image(image)
-
-            # Draw the buffer to the display hardware.
-            self.write_display()
-            time.sleep(delay)
-
     def setsprite(self, x, y, image, char):  # display a character at the indicated position on the screen
         image.paste(char, (x,y))             # the coords can be off the screen
         self.set_image(image)
         self.write_display()
 
-
+# Displays the given text in marquee style, repeated the number of times, with scrolling at the given speed (higher is slower)
     def print_str(self,image,text,repeat=1,speed=0.01):
         length = len(text)  # get the character count
         if length < 1:
@@ -374,3 +338,4 @@ class Matrix8x16(HT16K33.HT16K33):
                     if pos < 16 and pos > -8:   # only display if it's on the screen
                         self.setsprite(0,pos,image,self.getcharimage(text[x]))
                 time.sleep(speed)
+############################  END OF CLASS  ##############################
