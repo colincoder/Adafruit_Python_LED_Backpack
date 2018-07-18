@@ -3,4 +3,4 @@ build
 *.pyc
 setuptools-*
 dist/*
-/Adafruit_LED_Backpack/Matrix8x16Featherwing.py
+
