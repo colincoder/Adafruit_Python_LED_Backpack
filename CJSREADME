@@ -1,0 +1,58 @@
+5/2/2020
+
+bash <(curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/deb/update-nodejs-and-nodered)
+
+sudo vim /etc/modules
+and add
+w1_gpio
+w1_therm
+to the file end
+
+sudo vim /boot/config.txt
+and add
+dtoverlay=w1-gpio
+to end of file and reboot
+
+sudo apt-get update
+sudo apt-get install build-essential python-pip python-dev python-smbus git python-pil i2c-tools
+sudo apt-get install sense-hat
+
+Then
+sudo raspi-config
+and enable i2c in Interfacing Options
+
+Installing my Modified AdaFruit Feathermatrix
+Go into a new folder somewhere call Adafruit
+git clone https://github.com/colincoder/Adafruit_Python_LED_Backpack.git --branch FeatherMatrix8x16
+cd Adafruit_Python_LED_Backpack/
+Make sure ez-setup.py has
+DEFAULT_VERSION = "33.1.1"
+DEFAULT_URL = "https://pypi.io/packages/source/s/setuptools/"
+#cd Adafruit_LED_Backpack/
+
+sudo python setup.py install
+
+Test from the .node-red folder
+python displaynumber.py 1
+should display the number 1 in the display
+
+If it complains about Adafruit_GPIO being missing:
+git clone https://github.com/adafruit/Adafruit_Python_GPIO.git
+cd Adafruit_Python_GPIO
+sudo python setup.py install
+
+and
+
+pi@pifridge:~/.node-red $ sudo i2cdetect -y 1
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:          -- -- -- -- -- -- -- -- -- -- -- -- --
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+70: 70 -- -- -- -- -- -- --
+
+
+

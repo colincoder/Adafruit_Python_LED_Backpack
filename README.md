@@ -9,13 +9,13 @@ For all platforms (Raspberry Pi and Beaglebone Black) make sure your system is a
 
 ````
 sudo apt-get update
-sudo apt-get install build-essential python-dev
+sudo apt-get install build-essential python-pip python-dev  git i2c-tools
 ````
 
-You will also need to make sure the python-smbus and python-imaging library is installed by executing:
+You will also need to make sure the python-smbus and python-pil library is installed by executing:
 
 ````
-sudo apt-get install python-smbus python-imaging
+sudo apt-get install python-smbus python-pil
 ````
 
 Install the library by downloading with the download link on the right, unzipping the archive, navigating inside the library's directory and executing:
